@@ -1,0 +1,103 @@
+name: Weekly cancer research refresh
+
+on:
+  schedule:
+    # GitHub cron runs in UTC. Monday 7 p.m. US Eastern is 23:00 UTC Monday during
+    # daylight saving time (EDT) and 00:00 UTC Tuesday during standard time (EST).
+    # The "gate" job below only lets the matching one through.
+    - cron: "0 23 * * 1"
+    - cron: "0 0 * * 2"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["docs/**"]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Monday 7 p.m. Eastern
+        id: check
+        env:
+          SCHEDULE: ${{ github.event.schedule }}
+        run: python3 -m agent.schedule "$SCHEDULE" | tee -a "$GITHUB_OUTPUT"
+
+  build:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        if: github.event_name != 'push'
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        if: github.event_name != 'push'
+        run: pip install -r requirements.txt
+
+      - name: Run research agent
+        if: github.event_name != 'push'
+        env:
+          RENDER_SERVICE_URL: ${{ secrets.RENDER_SERVICE_URL }}
+          RENDER_REFRESH_TOKEN: ${{ secrets.RENDER_REFRESH_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          NCBI_API_KEY: ${{ secrets.NCBI_API_KEY }}
+          NCBI_EMAIL: ${{ secrets.NCBI_EMAIL }}
+        run: |
+          if [ -n "$RENDER_SERVICE_URL" ] && [ -n "$RENDER_REFRESH_TOKEN" ]; then
+            echo "Asking the Render web service to run the research agent..."
+            if curl -fsS --retry 3 --retry-delay 30 --retry-all-errors --max-time 900 \
+                 -X POST --oauth2-bearer "$RENDER_REFRESH_TOKEN" \
+                 "${RENDER_SERVICE_URL%/}/api/refresh" -o /tmp/results.json \
+               && python -m agent --validate /tmp/results.json; then
+              mv /tmp/results.json docs/data/results.json
+              exit 0
+            fi
+            echo "::warning::Render refresh failed; running the agent directly in this workflow."
+          fi
+          python -m agent --output docs/data/results.json
+
+      - name: Commit results
+        if: github.event_name != 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/data/results.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Update cancer research results ($(date -u +%Y-%m-%d))"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,11 @@
+{
+  "generated_at": null,
+  "period_start": null,
+  "period_end": null,
+  "lookback_days": 7,
+  "ai_model": null,
+  "overview": "The research agent has not run yet. Results will appear after the first weekly refresh (Mondays at 7 p.m. Eastern) or after the \"Weekly cancer research refresh\" workflow is run manually.",
+  "stats": {"total": 0, "by_type": {}, "by_category": {}, "sources_queried": []},
+  "errors": [],
+  "findings": []
+}
