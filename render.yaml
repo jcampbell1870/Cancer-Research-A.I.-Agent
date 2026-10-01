@@ -1,0 +1,26 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: cancer-research-ai-agent
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # A single worker keeps the refresh lock process-wide; threads keep /healthz responsive during a refresh.
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 900
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.3
+      - key: REFRESH_TOKEN
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: NCBI_API_KEY
+        sync: false
+      - key: NCBI_EMAIL
+        sync: false
+      - key: LOOKBACK_DAYS
+        value: "7"

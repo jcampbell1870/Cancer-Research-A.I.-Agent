@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cancer Research A.I. Agent — Weekly Findings</title>
+  <meta name="description" content="Weekly A.I.-curated digest of cutting-edge cancer research, preprints and new clinical trials.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>🔬 Cancer Research A.I. Agent</h1>
+    <p class="tagline">A weekly, A.I.-curated digest of cutting-edge cancer research and the search for new cures.</p>
+    <p id="meta" class="meta">Loading latest results…</p>
+  </header>
+
+  <main>
+    <section class="card overview">
+      <h2>This week's overview</h2>
+      <p id="overview"></p>
+      <div id="stats" class="stats"></div>
+    </section>
+
+    <section class="filters" aria-label="Filters">
+      <input id="search" type="search" placeholder="Search titles, summaries, cancers…" aria-label="Search findings">
+      <select id="type-filter" aria-label="Filter by type">
+        <option value="">All types</option>
+        <option value="publication">Publications</option>
+        <option value="preprint">Preprints</option>
+        <option value="clinical_trial">Clinical trials</option>
+      </select>
+      <select id="category-filter" aria-label="Filter by research area">
+        <option value="">All research areas</option>
+      </select>
+    </section>
+
+    <section id="findings" aria-live="polite"></section>
+  </main>
+
+  <footer>
+    <p>Sources: PubMed, Europe PMC (bioRxiv/medRxiv and other preprints) and ClinicalTrials.gov.
+      Refreshed automatically every Monday at 7 p.m. Eastern Time.</p>
+    <p class="disclaimer"><strong>Disclaimer:</strong> This page is generated automatically for informational purposes only and
+      is not medical advice. Preprints are not peer reviewed and early-stage results may not be replicated.
+      Always consult a qualified healthcare professional about treatment decisions.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
